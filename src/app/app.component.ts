@@ -1,5 +1,4 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import {e} from '@angular/core/src/render3';
 
 const SIZE = 50;
 const SEA_LAND_RATIO = 40;
@@ -59,7 +58,7 @@ export class AppComponent implements OnInit {
       } else {
 
         if (this.getValueAt(this.position.row, this.position.col) === AreaStatus.Discovered) {
-          this.findIsland(this.position.row, this.position.col, value);
+          this.findIslands(this.position.row, this.position.col, value, 'ONE');
         }
       }
       // redraw canvas
@@ -154,7 +153,7 @@ export class AppComponent implements OnInit {
       for (let row = 0; row < SIZE; row++) {
         if (this.getValueAt(row, col) === AreaStatus.Land) {
           this.numberOfIslands++;
-          this.findIslands(row, col, this.generateRandomColor());
+          this.findIslands(row, col, this.generateRandomColor(), 'ALL');
         }
       }
     }
@@ -193,40 +192,11 @@ export class AppComponent implements OnInit {
     });
   }
 
-  /**
-   * discover island and apply a new color.
-   * the definition of an Island is : All LAND square that connect to an other LAND square
-   */
-  private findIsland(row: number, col: number, color: string) {
-    // Fast exit - Bounds
-    if (row < 0 || row >= SIZE || col < 0 || col >= SIZE ) {
-      return;
-    }
-
-    // Fast exit - Status
-    if ( this.getValueAt(row, col) === AreaStatus.Sea || this.getIslandColor(row, col) === color) {
-      return;
-    }
-
-    this.setIslandColor(row, col, color);
-
-    // All connections possible
-    this.findIsland(row - 1, col - 1, color);
-    this.findIsland(row - 1, col, color);
-    this.findIsland(row - 1, col + 1, color);
-    this.findIsland(row, col - 1, color);
-    this.findIsland(row, col + 1, color);
-    this.findIsland(row + 1, col - 1, color);
-    this.findIsland(row + 1, col, color);
-    this.findIsland(row + 1, col + 1, color);
-  }
-
-
     /**
    * discover islands and apply a new color to each of them.
    * the definition of an Island is : All LAND square that connect to an other LAND square
    */
-  private findIslands(row: number, col: number, color: string) {
+  private findIslands(row: number, col: number, color: string, typeSearch: string) {
 
     // Fast exit - Bounds
     if (row < 0 || row >= SIZE || col < 0 || col >= SIZE ) {
@@ -234,21 +204,29 @@ export class AppComponent implements OnInit {
     }
 
     // Fast exit - Status
-    if ( this.getValueAt(row, col) === AreaStatus.Sea || this.getValueAt(row, col) === AreaStatus.Discovered) {
-      return;
+    if (typeSearch === 'ALL') {
+      if ( this.getValueAt(row, col) === AreaStatus.Sea || this.getValueAt(row, col) === AreaStatus.Discovered) {
+        return;
+      }
+      this.setValueAt(row, col, AreaStatus.Discovered);
+    }
+
+    if (typeSearch === 'ONE') {
+      if ( this.getValueAt(row, col) === AreaStatus.Sea || this.getIslandColor(row, col) === color) {
+        return;
+      }
     }
 
     this.setIslandColor(row, col, color);
-    this.setValueAt(row, col, AreaStatus.Discovered);
 
     // All connections possible
-    this.findIslands(row - 1, col - 1, color);
-    this.findIslands(row - 1, col, color);
-    this.findIslands(row - 1, col + 1, color);
-    this.findIslands(row, col - 1, color);
-    this.findIslands(row, col + 1, color);
-    this.findIslands(row + 1, col - 1, color);
-    this.findIslands(row + 1, col, color);
-    this.findIslands(row + 1, col + 1, color);
+    this.findIslands(row - 1, col - 1, color, typeSearch);
+    this.findIslands(row - 1, col, color, typeSearch);
+    this.findIslands(row - 1, col + 1, color, typeSearch);
+    this.findIslands(row, col - 1, color, typeSearch);
+    this.findIslands(row, col + 1, color, typeSearch);
+    this.findIslands(row + 1, col - 1, color, typeSearch);
+    this.findIslands(row + 1, col, color, typeSearch);
+    this.findIslands(row + 1, col + 1, color, typeSearch);
   }
 }
