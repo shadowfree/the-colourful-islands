@@ -1,4 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
+import {e} from '@angular/core/src/render3';
 
 const SIZE = 50;
 const SEA_LAND_RATIO = 40;
@@ -23,7 +24,7 @@ export class AppComponent implements OnInit {
   public canvasHeight = 800;
   public island: number[] = new Array(SIZE * SIZE);
   public color: string[] = new Array(SIZE * SIZE);
-  public newColor: string = '#00FF00';
+  public newColor = '#00FF00';
   public timeGeneration = 0;
   public numberOfIslands = 0;
 
@@ -39,16 +40,31 @@ export class AppComponent implements OnInit {
     this.generate();
 
     const start = performance.now();
-    this.findIslands();
+    this.countIslands();
     const end = performance.now();
     this.timeGeneration = Math.floor((end - start) * 100) / 100;
-
-    this.attachEventListeners();
     this.render();
   }
 
   public onColorChanged(event: Event) {
-    // Write your code below.
+    const regexHexaColor = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/g;
+    const value = (<HTMLInputElement>event.target).value;
+
+    if ( value.match(regexHexaColor)) {
+      if ( this.position === undefined ) {
+        this.newColor = value;
+        this.island.map((element, index) => {
+          this.color[index] = (element !== 0 ? this.newColor : SEA_COLOR);
+        });
+      } else {
+
+        if (this.getValueAt(this.position.row, this.position.col) === AreaStatus.Discovered) {
+          this.findIsland(this.position.row, this.position.col, value);
+        }
+      }
+      // redraw canvas
+      this.render();
+    }
   }
 
   private getInitialColor(value: number): string {
@@ -78,7 +94,6 @@ export class AppComponent implements OnInit {
    * generate new island
    */
   private generate() {
-
     let state, color;
     for (let col = 0; col < SIZE; col++) {
       for (let row = 0; row < SIZE; row++) {
@@ -96,7 +111,6 @@ export class AppComponent implements OnInit {
    * render the island into the canvas Element
    */
   private render() {
-
     const canvas = this.canvasEl.nativeElement;
     canvas.width = this.canvasWidth;
     canvas.height = this.canvasHeight;
@@ -115,6 +129,7 @@ export class AppComponent implements OnInit {
         ctx.fillStyle = '#000';
       }
     }
+    this.attachEventListeners(canvas);
   }
 
   /**
@@ -131,17 +146,106 @@ export class AppComponent implements OnInit {
   }
 
   /**
-   * attach event listeners
+   * count islands
+   * @return {number}
    */
-  private attachEventListeners() {
-    // Write your code below.
+  private countIslands() {
+    for (let col = 0; col < SIZE; col++) {
+      for (let row = 0; row < SIZE; row++) {
+        if (this.getValueAt(row, col) === AreaStatus.Land) {
+          this.numberOfIslands++;
+          this.findIslands(row, col, this.generateRandomColor());
+        }
+      }
+    }
+
+    return this.numberOfIslands;
   }
 
   /**
+   * attach event listeners
+   */
+  private attachEventListeners(canvas: any) {
+    const that = this;
+    canvas.addEventListener('click', (event) => {
+      let x, y;
+
+      if (event.pageX || event.pageY) {
+        x = event.pageX;
+        y = event.pageY;
+      } else {
+        x = event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+        y = event.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+      }
+      x -= canvas.offsetLeft + canvas.clientLeft;
+      y -= canvas.offsetTop + canvas.clientTop;
+
+      const squareWidth = Math.floor(canvas.width / SIZE);
+      const squareHeight = Math.floor(canvas.height / SIZE);
+
+      const row = Math.floor(y / squareWidth);
+      const col = Math.floor(x / squareHeight);
+
+      that.position = { row, col };
+    });
+  }
+
+  /**
+   * discover island and apply a new color.
+   * the definition of an Island is : All LAND square that connect to an other LAND square
+   */
+  private findIsland(row: number, col: number, color: string) {
+    // Fast exit - Bounds
+    if (row < 0 || row >= SIZE || col < 0 || col >= SIZE ) {
+      return;
+    }
+
+    // Fast exit - Status
+    if ( this.getValueAt(row, col) === AreaStatus.Sea || this.getIslandColor(row, col) === color) {
+      return;
+    }
+
+    this.setIslandColor(row, col, color);
+
+    // All connections possible
+    this.findIsland(row - 1, col - 1, color);
+    this.findIsland(row - 1, col, color);
+    this.findIsland(row - 1, col + 1, color);
+    this.findIsland(row, col - 1, color);
+    this.findIsland(row, col + 1, color);
+    this.findIsland(row + 1, col - 1, color);
+    this.findIsland(row + 1, col, color);
+    this.findIsland(row + 1, col + 1, color);
+  }
+
+
+    /**
    * discover islands and apply a new color to each of them.
    * the definition of an Island is : All LAND square that connect to an other LAND square
    */
-  private findIslands() {
-    // Write your code below.
+  private findIslands(row: number, col: number, color: string) {
+
+    // Fast exit - Bounds
+    if (row < 0 || row >= SIZE || col < 0 || col >= SIZE ) {
+      return;
+    }
+
+    // Fast exit - Status
+    if ( this.getValueAt(row, col) === AreaStatus.Sea || this.getValueAt(row, col) === AreaStatus.Discovered) {
+      return;
+    }
+
+    this.setIslandColor(row, col, color);
+    this.setValueAt(row, col, AreaStatus.Discovered);
+
+    // All connections possible
+    this.findIslands(row - 1, col - 1, color);
+    this.findIslands(row - 1, col, color);
+    this.findIslands(row - 1, col + 1, color);
+    this.findIslands(row, col - 1, color);
+    this.findIslands(row, col + 1, color);
+    this.findIslands(row + 1, col - 1, color);
+    this.findIslands(row + 1, col, color);
+    this.findIslands(row + 1, col + 1, color);
   }
 }
