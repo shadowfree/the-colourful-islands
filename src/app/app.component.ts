@@ -187,6 +187,9 @@ export class AppComponent implements OnInit {
       const col = Math.floor(x / squareHeight);
 
       that.position = { row, col };
+      this.inputEl.nativeElement.value = this.getIslandColor(row, col);
+      this.newColor = this.getIslandColor(row, col);
+      this.inputEl.nativeElement.focus();
     });
   }
 

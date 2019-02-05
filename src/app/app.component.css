@@ -17,6 +17,14 @@
   align-content: space-around;
 }
 
+.sample {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  vertical-align: bottom;
+  margin: 0 0.5rem;
+}
+
 canvas {
   margin: 0 auto;
   border: solid 0.2rem #bbb;
